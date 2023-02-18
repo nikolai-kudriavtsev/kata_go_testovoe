@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 )
 
 func fatal(v ...any) {
@@ -12,12 +14,12 @@ func fatal(v ...any) {
 }
 
 func main() {
-	var operandString1, operandString2 string
-	var operatorRune int
+	var operandAInput, operandBInput string
+	var operatorRune rune
 
 	for {
 		fmt.Println("Input:")
-		_, err := fmt.Scanf("%s %c %s\n", &operandString1, &operatorRune, &operandString2)
+		_, err := fmt.Scanf("%s %c %s\n", &operandAInput, &operatorRune, &operandBInput)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -25,7 +27,7 @@ func main() {
 			fatal(fmt.Errorf("bad input: %w", err))
 		}
 
-		fmt.Printf("Output:\n%#v %#v %#v\n", operandString1, operatorRune, operandString2)
+		fmt.Printf("Output:\n%#v %#v %#v\n", operandAInput, operatorRune, operandBInput)
 	}
 
 	fmt.Println("Exit")
@@ -42,7 +44,6 @@ var RomanNumerals = map[rune]int{
 }
 
 func romanToInt(s string) (int, error) {
-	{
 	sum := 0
 	greatest := 0 // determens if number needs to be subtracted
 
@@ -82,8 +83,48 @@ func newOperand(s string) (*operand, error) {
 
 	v, err = strconv.Atoi(s)
 	if err == nil {
-		return &operand{v, true}, nil
+		return &operand{v, false}, nil
 	}
 
-	return nil, fmt.Errorf("not an arabic or roman number")
+	return nil, errors.New("not an arabic or roman number")
+}
+
+var operations = map[rune]func(int, int) int{
+	'+': func(x, y int) int { return x + y },
+	'-': func(x, y int) int { return x - y },
+	'*': func(x, y int) int { return x * y },
+	'/': func(x, y int) int { return x / y },
+}
+
+type expression struct {
+	operator rune
+	x, y     *operand
+}
+
+func newExpression(operator rune, x, y *operand) (*expression, error) {
+	_, exists := operations[operator]
+	if !exists {
+		return nil, errors.New("no such operator")
+	}
+
+	if x.roman != y.roman {
+		return nil, errors.New("operands from different numeric systems")
+	}
+
+	return &expression{operator, x, y}, nil
+}
+
+func (e *expression) isRoman() bool {
+	return e.x.roman
+}
+
+func (e *expression) eval() (int, error) {
+	op := operations[e.operator]
+	result := op(e.x.value, e.y.value)
+
+	if e.isRoman() && result < 1 {
+		return result, fmt.Errorf("result of operation %d cannot be expressed by roman letters", result)
+	}
+
+	return result, nil
 }
