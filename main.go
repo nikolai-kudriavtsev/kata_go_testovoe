@@ -43,30 +43,30 @@ var RomanNumerals = map[rune]int{
 
 func romanToInt(s string) (int, error) {
 	{
-		sum := 0
-		greatest := 0 // determens if number needs to be subtracted
+	sum := 0
+	greatest := 0 // determens if number needs to be subtracted
 
-		// scanning right to left
-		for i := len(s) - 1; i >= 0; i-- {
-			letter := s[i]
+	// scanning right to left
+	for i := len(s) - 1; i >= 0; i-- {
+		letter := s[i]
 
-			num, exists := RomanNumerals[rune(letter)]
-			if !exists {
-				return 0, fmt.Errorf("%c is not a roman number", letter)
-			}
-
-			// case for for I in IV, I in IX, X in XL and so on
-			if num < greatest {
-				sum = sum - num
-				continue
-			}
-
-			greatest = num
-			sum = sum + num
+		num, exists := RomanNumerals[rune(letter)]
+		if !exists {
+			return 0, fmt.Errorf("%c is not a roman number", letter)
 		}
 
-		return sum, nil
+		// case for for I in IV, I in IX, X in XL and so on
+		if num < greatest {
+			sum = sum - num
+			continue
+		}
+
+		greatest = num
+		sum = sum + num
 	}
+
+	return sum, nil
+
 }
 
 type operand struct {
