@@ -30,3 +30,60 @@ func main() {
 
 	fmt.Println("Exit")
 }
+
+var RomanNumerals = map[rune]int{
+	'I': 1,
+	'V': 5,
+	'X': 10,
+	'L': 50,
+	'C': 100,
+	'D': 500,
+	'M': 1000,
+}
+
+func romanToInt(s string) (int, error) {
+	{
+		sum := 0
+		greatest := 0 // determens if number needs to be subtracted
+
+		// scanning right to left
+		for i := len(s) - 1; i >= 0; i-- {
+			letter := s[i]
+
+			num, exists := RomanNumerals[rune(letter)]
+			if !exists {
+				return 0, fmt.Errorf("%c is not a roman number", letter)
+			}
+
+			// case for for I in IV, I in IX, X in XL and so on
+			if num < greatest {
+				sum = sum - num
+				continue
+			}
+
+			greatest = num
+			sum = sum + num
+		}
+
+		return sum, nil
+	}
+}
+
+type operand struct {
+	value int
+	roman bool
+}
+
+func newOperand(s string) (*operand, error) {
+	v, err := romanToInt(s)
+	if err == nil {
+		return &operand{v, true}, nil
+	}
+
+	v, err = strconv.Atoi(s)
+	if err == nil {
+		return &operand{v, true}, nil
+	}
+
+	return nil, fmt.Errorf("not an arabic or roman number")
+}
