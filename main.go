@@ -26,7 +26,6 @@ func main() {
 type operation func(int, int) int
 type operationTable map[rune]operation
 
-// standart operations
 var standardOperations = operationTable{
 	'+': func(x, y int) int { return x + y },
 	'-': func(x, y int) int { return x - y },
