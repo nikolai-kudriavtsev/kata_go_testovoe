@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+const minInputValue = 1
+const maxInputValue = 10
+
 func fatal(e error) {
 	fatal := fmt.Errorf("fatal error: %w", e)
 	fmt.Fprintln(os.Stderr, fatal)
@@ -128,17 +131,35 @@ type operand struct {
 }
 
 func newOperand(s string) (*operand, error) {
+	var roman bool
+
 	v, err := romanToInt(s)
 	if err == nil {
-		return &operand{v, true}, nil
+		roman = true
+	} else {
+		v, err = strconv.Atoi(s)
+		if err != nil {
+			return nil, errors.New("not an arabic or roman integer number")
+		}
 	}
 
-	v, err = strconv.Atoi(s)
-	if err == nil {
-		return &operand{v, false}, nil
+	if v < minInputValue || v > maxInputValue {
+		var repr func(int) string
+
+		if roman {
+			repr = intToRoman
+		} else {
+			repr = strconv.Itoa
+		}
+
+		value := repr(v)
+		min := repr(minInputValue)
+		max := repr(maxInputValue)
+
+		return nil, fmt.Errorf("%s not in range of possible values from %s to %s", value, min, max)
 	}
 
-	return nil, errors.New("not an arabic or roman integer number")
+	return &operand{v, roman}, nil
 }
 
 var RomanNumerals = map[rune]int{
