@@ -9,12 +9,53 @@ import (
 	"strings"
 )
 
-func fatal(v ...any) {
-	fmt.Println(v...)
+func fatal(e error) {
+	fatal := fmt.Errorf("fatal error: %w", e)
+	fmt.Fprintln(os.Stderr, fatal)
 	os.Exit(1)
 }
 
 func main() {
+	c := newCalculator(standardOperations)
+	err := c.REPL(os.Stdin, os.Stdout)
+	if err != nil {
+		fatal(err)
+	}
+}
+
+type operation func(int, int) int
+type operationTable map[rune]operation
+
+// standart operations
+var standardOperations = operationTable{
+	'+': func(x, y int) int { return x + y },
+	'-': func(x, y int) int { return x - y },
+	'*': func(x, y int) int { return x * y },
+	'/': func(x, y int) int { return x / y },
+}
+
+type calculator struct {
+	operations operationTable
+}
+
+func newCalculator(ot operationTable) *calculator {
+	return &calculator{ot}
+}
+
+func (c *calculator) newExpression(operator rune, x, y *operand) (*expression, error) {
+	op, exists := c.operations[operator]
+	if !exists {
+		return nil, errors.New("no such operator")
+	}
+
+	if x.roman != y.roman {
+		return nil, errors.New("operands from different numeric systems")
+	}
+
+	return &expression{&op, x, y}, nil
+}
+
+func (c *calculator) REPL(r io.Reader, w io.Writer) error {
 	var operandXInput, operandYInput string
 	var operatorInput rune
 
@@ -25,27 +66,27 @@ func main() {
 			if err == io.EOF {
 				break
 			}
-			fatal(fmt.Errorf("bad input: %w", err))
+			return fmt.Errorf("bad input: %w", err)
 		}
 
 		oX, err := newOperand(operandXInput)
 		if err != nil {
-			fatal(fmt.Errorf("bad operand: %w", err))
+			return fmt.Errorf("bad operand: %w", err)
 		}
 
 		oY, err := newOperand(operandYInput)
 		if err != nil {
-			fatal(fmt.Errorf("bad operand: %w", err))
+			return fmt.Errorf("bad operand: %w", err)
 		}
 
-		exp, err := newExpression(operatorInput, oX, oY)
+		exp, err := c.newExpression(operatorInput, oX, oY)
 		if err != nil {
-			fatal(fmt.Errorf("bad expression: %w", err))
+			return fmt.Errorf("bad expression: %w", err)
 		}
 
 		r, err := exp.eval()
 		if err != nil {
-			fatal(fmt.Errorf("bad evaluation: %w", err))
+			return fmt.Errorf("bad evaluation: %w", err)
 		}
 
 		var output string
@@ -59,6 +100,46 @@ func main() {
 	}
 
 	fmt.Println("exit")
+
+	return nil
+}
+
+type expression struct {
+	op   *operation
+	x, y *operand
+}
+
+func (e *expression) isRoman() bool {
+	return e.x.roman
+}
+
+func (e *expression) eval() (int, error) {
+	result := (*e.op)(e.x.value, e.y.value)
+
+	if e.isRoman() && result < 1 {
+		return result, fmt.Errorf("result of operation %d cannot be expressed by roman letters", result)
+	}
+
+	return result, nil
+}
+
+type operand struct {
+	value int
+	roman bool
+}
+
+func newOperand(s string) (*operand, error) {
+	v, err := romanToInt(s)
+	if err == nil {
+		return &operand{v, true}, nil
+	}
+
+	v, err = strconv.Atoi(s)
+	if err == nil {
+		return &operand{v, false}, nil
+	}
+
+	return nil, errors.New("not an arabic or roman integer number")
 }
 
 var RomanNumerals = map[rune]int{
@@ -73,9 +154,8 @@ var RomanNumerals = map[rune]int{
 
 func romanToInt(s string) (int, error) {
 	sum := 0
-	greatest := 0 // determens if number needs to be subtracted
+	greatest := 0
 
-	// scanning right to left
 	for i := len(s) - 1; i >= 0; i-- {
 		letter := s[i]
 
@@ -84,7 +164,6 @@ func romanToInt(s string) (int, error) {
 			return 0, fmt.Errorf("%c is not a roman number", letter)
 		}
 
-		// case for for I in IV, I in IX, X in XL and so on
 		if num < greatest {
 			sum = sum - num
 			continue
@@ -127,63 +206,4 @@ func intToRoman(number int) string {
 	}
 
 	return roman.String()
-}
-
-type operand struct {
-	value int
-	roman bool
-}
-
-func newOperand(s string) (*operand, error) {
-	v, err := romanToInt(s)
-	if err == nil {
-		return &operand{v, true}, nil
-	}
-
-	v, err = strconv.Atoi(s)
-	if err == nil {
-		return &operand{v, false}, nil
-	}
-
-	return nil, errors.New("not an arabic or roman integer number")
-}
-
-var operations = map[rune]func(int, int) int{
-	'+': func(x, y int) int { return x + y },
-	'-': func(x, y int) int { return x - y },
-	'*': func(x, y int) int { return x * y },
-	'/': func(x, y int) int { return x / y },
-}
-
-type expression struct {
-	operator rune
-	x, y     *operand
-}
-
-func newExpression(operator rune, x, y *operand) (*expression, error) {
-	_, exists := operations[operator]
-	if !exists {
-		return nil, errors.New("no such operator")
-	}
-
-	if x.roman != y.roman {
-		return nil, errors.New("operands from different numeric systems")
-	}
-
-	return &expression{operator, x, y}, nil
-}
-
-func (e *expression) isRoman() bool {
-	return e.x.roman
-}
-
-func (e *expression) eval() (int, error) {
-	op := operations[e.operator]
-	result := op(e.x.value, e.y.value)
-
-	if e.isRoman() && result < 1 {
-		return result, fmt.Errorf("result of operation %d cannot be expressed by roman letters", result)
-	}
-
-	return result, nil
 }
