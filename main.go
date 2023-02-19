@@ -47,7 +47,7 @@ func newCalculator(ot operationTable) *calculator {
 func (c *calculator) newExpression(operator rune, x, y *operand) (*expression, error) {
 	op, exists := c.operations[operator]
 	if !exists {
-		return nil, errors.New("no such operator")
+		return nil, fmt.Errorf("%c is not a supported operator", operator)
 	}
 
 	if x.roman != y.roman {
@@ -139,7 +139,7 @@ func newOperand(s string) (*operand, error) {
 	} else {
 		v, err = strconv.Atoi(s)
 		if err != nil {
-			return nil, errors.New("not an arabic or roman integer number")
+			return nil, fmt.Errorf("%s is not an arabic or roman integer number", s)
 		}
 	}
 
