@@ -62,7 +62,7 @@ func (c *calculator) REPL(input io.Reader, output io.Writer) error {
 	var operatorInput rune
 
 	for {
-		fmt.Println("input:")
+		fmt.Fprintln(output, "input:")
 		_, err := fmt.Fscanf(input, "%s %c %s\n", &operandXInput, &operatorInput, &operandYInput)
 		if err != nil {
 			if err == io.EOF {
@@ -101,7 +101,7 @@ func (c *calculator) REPL(input io.Reader, output io.Writer) error {
 		fmt.Fprintf(output, "output:\n%s\n", result)
 	}
 
-	fmt.Println("exit")
+	fmt.Fprintln(output, "exit")
 
 	return nil
 }
