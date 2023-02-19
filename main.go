@@ -145,7 +145,7 @@ func newOperand(s string) (*operand, error) {
 		return &operand{v, false}, nil
 	}
 
-	return nil, errors.New("not an arabic or roman number")
+	return nil, errors.New("not an arabic or roman integer number")
 }
 
 var operations = map[rune]func(int, int) int{
