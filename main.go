@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func fatal(v ...any) {
@@ -42,12 +43,19 @@ func main() {
 			fatal(fmt.Errorf("bad expression: %w", err))
 		}
 
-		result, err := exp.eval()
+		r, err := exp.eval()
 		if err != nil {
 			fatal(fmt.Errorf("bad evaluation: %w", err))
 		}
 
-		fmt.Printf("output:\n%d\n", result)
+		var output string
+		if exp.isRoman() {
+			output = intToRoman(r)
+		} else {
+			output = strconv.Itoa(r)
+		}
+
+		fmt.Printf("output:\n%s\n", output)
 	}
 
 	fmt.Println("exit")
@@ -87,7 +95,38 @@ func romanToInt(s string) (int, error) {
 	}
 
 	return sum, nil
+}
 
+func intToRoman(number int) string {
+	var roman strings.Builder
+
+	intToRomanTable := []struct {
+		value int
+		digit string
+	}{
+		{1000, "M"},
+		{900, "CM"},
+		{500, "D"},
+		{400, "CD"},
+		{100, "C"},
+		{90, "XC"},
+		{50, "L"},
+		{40, "XL"},
+		{10, "X"},
+		{9, "IX"},
+		{5, "V"},
+		{4, "IV"},
+		{1, "I"},
+	}
+
+	for _, row := range intToRomanTable {
+		for number >= row.value {
+			roman.WriteString(row.digit)
+			number -= row.value
+		}
+	}
+
+	return roman.String()
 }
 
 type operand struct {
