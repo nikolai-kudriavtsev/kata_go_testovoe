@@ -54,13 +54,13 @@ func (c *calculator) newExpression(operator rune, x, y *operand) (*expression, e
 	return &expression{&op, x, y}, nil
 }
 
-func (c *calculator) REPL(r io.Reader, w io.Writer) error {
+func (c *calculator) REPL(input io.Reader, output io.Writer) error {
 	var operandXInput, operandYInput string
 	var operatorInput rune
 
 	for {
 		fmt.Println("input:")
-		_, err := fmt.Scanf("%s %c %s\n", &operandXInput, &operatorInput, &operandYInput)
+		_, err := fmt.Fscanf(input, "%s %c %s\n", &operandXInput, &operatorInput, &operandYInput)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -88,14 +88,14 @@ func (c *calculator) REPL(r io.Reader, w io.Writer) error {
 			return fmt.Errorf("bad evaluation: %w", err)
 		}
 
-		var output string
+		var result string
 		if exp.isRoman() {
-			output = intToRoman(r)
+			result = intToRoman(r)
 		} else {
-			output = strconv.Itoa(r)
+			result = strconv.Itoa(r)
 		}
 
-		fmt.Printf("output:\n%s\n", output)
+		fmt.Fprintf(output, "output:\n%s\n", result)
 	}
 
 	fmt.Println("exit")
