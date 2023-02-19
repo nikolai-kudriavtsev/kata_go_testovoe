@@ -14,12 +14,12 @@ func fatal(v ...any) {
 }
 
 func main() {
-	var operandAInput, operandBInput string
-	var operatorRune rune
+	var operandXInput, operandYInput string
+	var operatorInput rune
 
 	for {
-		fmt.Println("Input:")
-		_, err := fmt.Scanf("%s %c %s\n", &operandAInput, &operatorRune, &operandBInput)
+		fmt.Println("input:")
+		_, err := fmt.Scanf("%s %c %s\n", &operandXInput, &operatorInput, &operandYInput)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -27,10 +27,30 @@ func main() {
 			fatal(fmt.Errorf("bad input: %w", err))
 		}
 
-		fmt.Printf("Output:\n%#v %#v %#v\n", operandAInput, operatorRune, operandBInput)
+		oX, err := newOperand(operandXInput)
+		if err != nil {
+			fatal(fmt.Errorf("bad operand: %w", err))
+		}
+
+		oY, err := newOperand(operandYInput)
+		if err != nil {
+			fatal(fmt.Errorf("bad operand: %w", err))
+		}
+
+		exp, err := newExpression(operatorInput, oX, oY)
+		if err != nil {
+			fatal(fmt.Errorf("bad expression: %w", err))
+		}
+
+		result, err := exp.eval()
+		if err != nil {
+			fatal(fmt.Errorf("bad evaluation: %w", err))
+		}
+
+		fmt.Printf("output:\n%d\n", result)
 	}
 
-	fmt.Println("Exit")
+	fmt.Println("exit")
 }
 
 var RomanNumerals = map[rune]int{
