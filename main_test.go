@@ -18,6 +18,7 @@ func (t *testCase) Name() string {
 
 func TestCalculator(t *testing.T) {
 	var tests = []testCase{
+		// op, x, y, result, err
 		// basic
 		{'+', "2", "2", "4", ""},
 		{'+', "II", "II", "IV", ""},
@@ -27,6 +28,23 @@ func TestCalculator(t *testing.T) {
 		{'*', "II", "II", "IV", ""},
 		{'/', "2", "2", "1", ""},
 		{'/', "II", "II", "I", ""},
+		// fail on unsupported operator
+		{'%', "2", "2", "", "bad expression: % is not a supported operator"},
+		// fail on input not in range of 1 to 10
+		{'+', "0", "2", "", "bad operand: 0 not in range of possible values from 1 to 10"},
+		{'+', "11", "2", "", "bad operand: 11 not in range of possible values from 1 to 10"},
+		{'+', "XI", "II", "", "bad operand: XI not in range of possible values from I to X"},
+		// big output
+		{'*', "10", "10", "100", ""},
+		{'*', "X", "X", "C", ""},
+		// fail on non integer value
+		{'+', "2.5", "2", "", "bad operand: 2.5 is not an arabic or roman integer number"},
+		// fail on mixed numeric systems
+		{'+', "2", "II", "", "bad expression: operands from different numeric systems"},
+		// bad input format or expression
+		{'+', "2 + 2", "2", "", "bad input: newline in format does not match input"},
+		// result >= I for roman
+		{'-', "I", "I", "", "bad evaluation: result of operation 0 cannot be expressed by roman letters"},
 	}
 
 	calc := newCalculator(standardOperations)
@@ -62,7 +80,7 @@ func TestCalculator(t *testing.T) {
 			var errRepr, explainer string
 			if tt.result != result {
 				fail = true
-				explainer = fmt.Sprintf("got result %s, want %s; ", result, tt.result)
+				explainer = fmt.Sprintf("got result %#v, want %#v; ", result, tt.result)
 			}
 			if calcErr != nil {
 				errRepr = calcErr.Error()
